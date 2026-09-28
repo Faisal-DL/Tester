@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays, Check, CheckCircle2, Lightbulb, Search, RotateCcw } from "lucide-react";
 import { scenario as s } from "@/lib/scenario";
 import { journeyEvent } from "@/lib/analytics";
+import { logDemoOutcome } from "@/lib/posthog-logs";
 
 type Screen = "home" | "primary" | "review" | "primary-done" | "lookup" | "lookup-done" | "suggest" | "suggest-done";
 type Reservation = { code: string; name: string; detail: string };
@@ -43,22 +44,22 @@ export default function Home() {
     const item = s.options[selected];
     const reservation: Reservation = { code: s.referencePrefix + "-" + (2043 + reservations.length), name: item.name, detail: item.detail };
     setReservations([reservation, ...reservations]); setNewCode(reservation.code);
-    journeyEvent("reservation_completed", { option: item.name }); setScreen("primary-done");
+    journeyEvent("reservation_completed", { option: item.name }); logDemoOutcome("reservation_completed"); setScreen("primary-done");
   };
   const startLookup = () => { setReference(s.seedReference); setError(""); journeyEvent("lookup_started"); setScreen("lookup"); };
   const findReservation = () => {
     const match = [seed, ...reservations].find(item => item.code.toLowerCase() === reference.trim().toLowerCase());
     if (!match) { setError("Reference not found. Try " + s.seedReference + "."); return; }
-    setFound(match); setError(""); journeyEvent("lookup_completed"); setScreen("lookup-done");
+    setFound(match); setError(""); journeyEvent("lookup_completed"); logDemoOutcome("lookup_completed"); setScreen("lookup-done");
   };
   const startSuggestion = () => { setSubject(""); setDetails(""); setError(""); journeyEvent("suggestion_started"); setScreen("suggest"); };
   const saveSuggestion = () => {
     if (subject.trim().length < 5 || details.trim().length < 12) { setError("Add a short title and at least one sentence of detail."); return; }
     const suggestion: Suggestion = { code: "IDEA-" + (301 + suggestions.length), subject: subject.trim(), details: details.trim() };
     setSuggestions([suggestion, ...suggestions]); setNewCode(suggestion.code);
-    setError(""); journeyEvent("suggestion_completed"); setScreen("suggest-done");
+    setError(""); journeyEvent("suggestion_completed"); logDemoOutcome("suggestion_completed"); setScreen("suggest-done");
   };
-  const reset = () => { setReservations([]); setSuggestions([]); setResetOpen(false); home(); };
+  const reset = () => { setReservations([]); setSuggestions([]); journeyEvent("demo_reset"); setResetOpen(false); home(); };
 
   return <div className="shell" style={{ "--accent": s.accent } as React.CSSProperties}>
     <header className="topbar">
